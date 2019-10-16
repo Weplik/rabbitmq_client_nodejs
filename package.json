@@ -1,0 +1,20 @@
+{
+  "name": "rabbitmq_client_nodejs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:Weplik/rabbitmq_client_nodejs.git",
+  "author": "Weplik <krylov.denis.93@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "amqplib": "^0.5.5",
+    "lodash": "^4.17.15"
+  },
+  "devDependencies": {
+    "eslint": "5.16.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-prettier": "^6.4.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-prettier": "^3.1.1",
+    "prettier": "^1.18.2"
+  }
+}
