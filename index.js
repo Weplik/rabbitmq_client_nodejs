@@ -5,7 +5,7 @@ const { isEmpty } = require('lodash');
 const conn = Symbol('connection');
 const channels = Symbol('channels');
 
-class RabbitmqClient extends EventEmitter {
+class RabbitMQClient extends EventEmitter {
   constructor(options = {}) {
     super();
 
@@ -42,7 +42,7 @@ class RabbitmqClient extends EventEmitter {
       this[conn].connection = await amqp.connect(this[conn].options);
       this[conn].status = 2;
 
-      this[conn].connection.on('close', () => {
+      this[conn].connection.on('close', err => {
         this[conn].status = 3;
 
         if (this[conn].isNeedReconnect) {
@@ -55,6 +55,8 @@ class RabbitmqClient extends EventEmitter {
             });
           }, 10 * 1000);
         }
+
+        super.emit('connection:closed', { err });
       });
 
       return this[conn];
@@ -101,12 +103,57 @@ class RabbitmqClient extends EventEmitter {
 
       this[channels][name].status = 2;
 
+      this[channels][name].channel.on('close', err => {
+        this.channels[name].status = 3;
+
+        if (this[channels][name].isNeedRecreate) {
+          this[channels][name].reconnectInterval = setInterval(() => {
+            this.createChannel(name, options).then(() => {
+              super.emit('channel:recreated', { channel: name });
+            });
+          }, 10 * 1000);
+        }
+        super.emit('channel:closed', { channel: name, err });
+      });
+
+      this[channels][name].channel.on('error', err => {
+        super.emit('channel:error', { channel: name, err });
+      });
+
       return this[channels][name];
     } catch (err) {
       this[channels][name].status = 3;
       throw err;
     }
   }
+
+  getChannelByName(name) {
+    if (!name) {
+      throw new Error('Name is required');
+    }
+
+    if (!this[channels][name]) {
+      throw new Error('Channel not found');
+    }
+
+    return this[channels][name].channel;
+  }
+
+  isReadyConnection() {
+    return this[conn].status === 2;
+  }
+
+  isReadyChannel(name) {
+    if (!name) {
+      throw new Error('Name is required');
+    }
+
+    if (!this[channels][name]) {
+      throw new Error('Channel not found');
+    }
+
+    return this[channels][name].status === 2;
+  }
 }
 
-module.exports = RabbitmqClient;
+module.exports = RabbitMQClient;
